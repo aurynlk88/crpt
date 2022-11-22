@@ -1,0 +1,74 @@
+declare -i parameter_counter=0;
+while getopts ":e:d:h:" opt; do
+    case $opt in
+	e ) encrypt=$OPTARG; let parameter_counter+=1;;
+	d ) decrypt=$OPTARG; let parameter_counter+=1;;
+	h ) help=$OPTARG; let parameter_counter+=1;;
+    esac
+done
+
+file=$2
+
+#get password
+function getPassword()
+{
+    echo -e "Ingresa la contraseña: "
+    read -s PASS
+    echo -e "Repite la contraseña: "
+    read -s REPASS
+
+    if [ "$PASS" != "$REPASS" ]; then
+	echo -e "${RED}[!]${RESET} ${GRAY}Escribe bien la contraseña${RESET}"
+	set -e
+    fi
+}
+
+function password()
+{
+    echo "Ingresa la contraseña: "
+    read -s PASS
+}
+
+# encrypt function
+function encrypt()
+{
+	getPassword
+	passkey="${PASS}"
+	openssl enc -in "${file}" -out "${file}.enc" -e -aes256 -pass "pass:${passkey}" -pbkdf2
+}
+
+
+# decrypt function
+function decrypt()
+{
+	password
+	passkey="$PASS"
+	decfile=$(echo $file | sed "s/.enc//g")
+	openssl enc -in "${file}" -out "${decfile}.dec" -d -aes256 -pass "pass:${passkey}" -pbkdf2
+}
+
+
+# help panel
+function help()
+{
+echo -e "Crypt
+Una herramienta en bash creada para encriptar y desencriptar archivos a través de openssl.
+Uso: crpt ${PURPLE}[flag]${RESET} ${GREEN}[archivo]${RESET} 
+  ${PURPLE}-e${RESET}  ${GRAY}Encripta el archivo y lo almacena con la extensión .enc${RESET}
+  ${PURPLE}-e${RESET}  ${GRAY}Desencripta el archivo y lo almacena con la extensión .dec${RESET}
+  ${PURPLE}-e${RESET}  ${GRAY}Enseña el panel de ayuda${RESET}
+"
+}
+
+# Main func
+if [ $parameter_counter -ne 0 ]; then
+	if [ "$(echo $encrypt)" ]; then
+		encrypt
+	elif [ "$(echo $decrypt)" ]; then
+		decrypt
+	elif [ "$(echo $help)" ]; then
+		help
+	fi
+else
+	help
+fi
